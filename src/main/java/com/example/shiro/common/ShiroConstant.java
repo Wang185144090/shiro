@@ -37,6 +37,11 @@ public class ShiroConstant {
     public static final Integer REMEMBER_ME_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
 
     /**
+     * shiro缓存前缀
+     */
+    public static final String CACHE_PREFIX = "redis_shiro_cache";
+
+    /**
      * 缓存有效时间，单位秒
      */
     public static final Integer CACHE_EXPIRE = 60 * 60;
@@ -74,5 +79,20 @@ public class ShiroConstant {
     /**
      * 登录接口地址
      */
-    public static final String LOGIN_INTERFACE_URL = "";
+    public static final String LOGIN_INTERFACE_URL = "/login";
+
+    /**
+     * 用户限制登录标识
+     */
+    public static final String KICKOUT_FLAG = "kickout";
+
+    /**
+     * false:限制之前登录的用户，true:限制之后登录的用户
+     */
+    public static final Boolean KICKOUT_AFTER = false;
+
+    /**
+     * 同一账号同时登录会话数
+     */
+    public static final Integer MAX_SESSION = 1;
 }

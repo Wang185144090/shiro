@@ -16,9 +16,10 @@ public class ShiroSessionListener implements SessionListener {
      * 切换为redis计数
      * 统计有效session个数
      */
-    AtomicInteger sessionCount = new AtomicInteger(0);
+    private static AtomicInteger sessionCount = new AtomicInteger(0);
 
     /**
+     * 会话创建时触发
      * 启动 计数+1
      *
      * @param session
@@ -29,6 +30,7 @@ public class ShiroSessionListener implements SessionListener {
     }
 
     /**
+     * 退出会话时触发
      * 停止 计数-1
      *
      * @param session
@@ -39,6 +41,7 @@ public class ShiroSessionListener implements SessionListener {
     }
 
     /**
+     * 会话过期时触发
      * 过期  计数-1
      *
      * @param session
@@ -46,5 +49,13 @@ public class ShiroSessionListener implements SessionListener {
     @Override
     public void onExpiration(Session session) {
         sessionCount.decrementAndGet();
+    }
+
+    /**
+     * 获取当前登录人数
+     * @return
+     */
+    public static int getLoginNum() {
+        return sessionCount.intValue();
     }
 }

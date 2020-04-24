@@ -2,6 +2,10 @@ package com.example.shiro.shiro;
 
 import com.example.shiro.common.PublicConstant;
 import com.example.shiro.common.ShiroConstant;
+import com.example.shiro.model.po.User;
+import com.example.shiro.redis.RedisInfo;
+import com.example.shiro.shiro.filter.LoginFilter;
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.codec.Base64;
 import org.apache.shiro.crypto.hash.Sha256Hash;
@@ -21,7 +25,6 @@ import org.crazycake.shiro.RedisCacheManager;
 import org.crazycake.shiro.RedisManager;
 import org.crazycake.shiro.RedisSessionDAO;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -31,25 +34,18 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * shiro核心配置类
+ *
+ * @author wangguoqiang
+ */
 @Configuration
 public class ShiroConfig {
-
-    @Value("${spring.redis.host:}")
-    private String host;
-    @Value("${spring.redis.port:}")
-    private Integer port;
-    @Value("${spring.redis.password:}")
-    private String password;
-    @Value("${spring.redis.database:}")
-    private Integer database;
-    @Value("${spring.redis.timeout:}")
-    private Integer timeout;
 
     /**
      * shiro总配置入口
      *
      * @param securityManager 安全管理中心
-     * @return
      */
     @Bean
     public ShiroFilterFactoryBean shiroFilter(@Qualifier("securityManager") SecurityManager securityManager) {
@@ -63,37 +59,26 @@ public class ShiroConfig {
         //配置自定义拦截器
         Map<String, Filter> filterMap = new LinkedHashMap<>();
         //登录授权拦截,从上向下顺序执行，一般将 /**放在最为下边
-        filterMap.put("loginAuthFilter", loginAuthFilter());
-        //限制同一账号在线登录人数
-        filterMap.put("kickOut", kickoutSessionControlFilter());
+        filterMap.put("loginAuthFilter", loginFilter());
         shiroFilterFactoryBean.setFilters(filterMap);
         //除了登录授权拦截处理器之外的接口，都需要登录
         Map<String, String> filterChanDefinitionMap = new LinkedHashMap<>();
+        //配置登录拦截器
         filterChanDefinitionMap.put("/**", "loginAuthFilter");
+        shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChanDefinitionMap);
         return shiroFilterFactoryBean;
     }
 
-    @Bean("loginAuthFilter")
-    public LoginAuthFilter loginAuthFilter() {
-        return new LoginAuthFilter();
-    }
-
     /**
-     * 限制同一账号登录同时登录人数控制
-     *
-     * @return
+     * 登录拦截器
      */
-    @Bean
-    public KickoutSessionControlFilter kickoutSessionControlFilter() {
-        KickoutSessionControlFilter kickoutSessionControlFilter = new KickoutSessionControlFilter();
-
-        return kickoutSessionControlFilter;
+    @Bean("loginFilter")
+    public LoginFilter loginFilter() {
+        return new LoginFilter();
     }
 
     /**
      * 安全管理中心
-     *
-     * @return
      */
     @Bean("securityManager")
     public SecurityManager securityManager() {
@@ -111,8 +96,6 @@ public class ShiroConfig {
 
     /**
      * shiro自定义realm
-     *
-     * @return
      */
     @Bean
     public ShiroRealm shiroRealm() {
@@ -135,7 +118,7 @@ public class ShiroConfig {
     /**
      * 凭证匹配器
      *
-     * @return
+     * @return 返回凭证匹配器
      */
     @Bean
     public HashedCredentialsMatcher hashedCredentialsMatcher() {
@@ -152,7 +135,7 @@ public class ShiroConfig {
     public CookieRememberMeManager rememberMeManager() {
         CookieRememberMeManager cookieRememberMeManager = new CookieRememberMeManager();
         //设置自定义cookie
-        cookieRememberMeManager.setCookie(customCookie(ShiroConstant.REMEMBER_ME_COOKIE_VIEW_NAME, true, ShiroConstant.REMEMBER_ME_COOKIE_PATH, ShiroConstant.REMEMBER_ME_COOKIE_MAX_AGE));
+        cookieRememberMeManager.setCookie(customCookie(ShiroConstant.REMEMBER_ME_COOKIE_VIEW_NAME, ShiroConstant.REMEMBER_ME_COOKIE_PATH, ShiroConstant.REMEMBER_ME_COOKIE_MAX_AGE));
         //rememberMe cookie加密的密钥 建议每个项目都不一样 默认AES算法
         cookieRememberMeManager.setCipherKey(Base64.decode(ShiroConstant.REMEMBER_ME_COOKIE_KEY));
         return cookieRememberMeManager;
@@ -160,14 +143,12 @@ public class ShiroConfig {
 
     /**
      * 设置自定义cookie
-     *
-     * @return
      */
-    private SimpleCookie customCookie(String cookieViewName, boolean httpOnlyStatus, String cookiePath, int cookieMaxAge) {
+    private SimpleCookie customCookie(String cookieViewName, String cookiePath, int cookieMaxAge) {
         //设置页面checkbox的name值
         SimpleCookie simpleCookie = new SimpleCookie(cookieViewName);
         //增加对xss防护的安全系数（开启之后只能通过http访问，JavaScript无法访问）
-        simpleCookie.setHttpOnly(httpOnlyStatus);
+        simpleCookie.setHttpOnly(true);
         //设置cookie根路径
         simpleCookie.setPath(cookiePath);
         //设置cookie有效时间（单位：秒）-1表示浏览器关闭时失效此cookie
@@ -181,6 +162,8 @@ public class ShiroConfig {
     @Bean
     public RedisCacheManager cacheManager() {
         RedisCacheManager redisCacheManager = new RedisCacheManager();
+        //设置shiro缓存名称
+        redisCacheManager.setKeyPrefix(ShiroConstant.CACHE_PREFIX);
         //设置redis作为缓存
         redisCacheManager.setRedisManager(redisManager());
         //设置用户权限信息缓存有效时间
@@ -195,25 +178,30 @@ public class ShiroConfig {
     public RedisManager redisManager() {
         //配置redis连接信息(详细解释查看项目配置文件)
         RedisManager redisManager = new RedisManager();
-        redisManager.setHost(host + PublicConstant.KEY_VALUE_SEPARATOR + port);
-        redisManager.setPassword(password);
-        redisManager.setDatabase(database);
-        redisManager.setTimeout(timeout);
+        redisManager.setHost(redisConfig().getHost() + PublicConstant.KEY_VALUE_SEPARATOR + redisConfig().getPort());
+        redisManager.setPassword(redisConfig().getPassword());
+        redisManager.setDatabase(redisConfig().getDatabase());
+        redisManager.setTimeout(redisConfig().getTimeout());
         return redisManager;
+    }
+
+    @Bean
+    public RedisInfo redisConfig() {
+        return new RedisInfo();
     }
 
     /**
      * 会话管理中心
      */
-    @Bean()
+    @Bean("sessionManager")
     public SessionManager sessionManager() {
         DefaultWebSessionManager sessionManager = new DefaultWebSessionManager();
         Collection<SessionListener> listeners = new ArrayList<>();
         //配置session监听器
         listeners.add(sessionListener());
         sessionManager.setSessionListeners(listeners);
-        //配置会话IDcookie
-        sessionManager.setSessionIdCookie(customCookie(ShiroConstant.SESSION_ID_COOKIE_VIEW_NAME, true, ShiroConstant.SESSION_ID_COOKIE_PATH, ShiroConstant.SESSION_ID_COOKIE_MAX_AGE));
+        //配置会话ID cookie
+        sessionManager.setSessionIdCookie(customCookie(ShiroConstant.SESSION_ID_COOKIE_VIEW_NAME, ShiroConstant.SESSION_ID_COOKIE_PATH, ShiroConstant.SESSION_ID_COOKIE_MAX_AGE));
         //配置sessionDao
         sessionManager.setSessionDAO(sessionDao());
         //配置缓存管理
@@ -255,8 +243,6 @@ public class ShiroConfig {
 
     /**
      * 配置会话ID生成器
-     *
-     * @return
      */
     @Bean
     public SessionIdGenerator sessionIdGenerator() {
@@ -267,14 +253,18 @@ public class ShiroConfig {
      * 开启shiro aop注解支持.
      * 可以在controller中的方法前加上注解
      * 如 @RequiresPermissions("userInfo:add")
-     *
-     * @param securityManager
-     * @return
      */
     @Bean
     public AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor(SecurityManager securityManager) {
         AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor = new AuthorizationAttributeSourceAdvisor();
         authorizationAttributeSourceAdvisor.setSecurityManager(securityManager);
         return authorizationAttributeSourceAdvisor;
+    }
+
+    /**
+     * 获取session中的当前登录对象
+     */
+    public static User getCurrentLoginUser() {
+        return (User) SecurityUtils.getSubject().getPrincipal();
     }
 }
