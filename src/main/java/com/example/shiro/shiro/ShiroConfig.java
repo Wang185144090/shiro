@@ -3,7 +3,7 @@ package com.example.shiro.shiro;
 import com.example.shiro.common.PublicConstant;
 import com.example.shiro.common.ShiroConstant;
 import com.example.shiro.model.po.User;
-import com.example.shiro.redis.RedisInfo;
+import com.example.shiro.redis.JedisConfig;
 import com.example.shiro.shiro.filter.LoginFilter;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
@@ -27,6 +27,8 @@ import org.crazycake.shiro.RedisSessionDAO;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import javax.servlet.Filter;
 import java.util.ArrayList;
@@ -83,14 +85,14 @@ public class ShiroConfig {
     @Bean("securityManager")
     public SecurityManager securityManager() {
         DefaultWebSecurityManager securityManager = new DefaultWebSecurityManager();
-        //设置自定义realm（身份认证/登录、授权）
-        securityManager.setRealm(shiroRealm());
         //配置记住我（只需登录一次）
         securityManager.setRememberMeManager(rememberMeManager());
         //配置缓存管理器
         securityManager.setCacheManager(cacheManager());
         //配置自定义session管理
         securityManager.setSessionManager(sessionManager());
+        //设置自定义realm（身份认证/登录、授权），这个放到最后，防止shiro登录不获取授权信息
+        securityManager.setRealm(shiroRealm());
         return securityManager;
     }
 
@@ -102,8 +104,8 @@ public class ShiroConfig {
         ShiroRealm shiroRealm = new ShiroRealm();
         //开启shiro验证缓存
         shiroRealm.setCachingEnabled(true);
-        //启用身份验证缓存，默认不缓存
-        shiroRealm.setAuthenticationCachingEnabled(true);
+        //启用身份验证缓存，默认不缓存(此处开启身份认证缓存，导致密码加密登录失败，具体原因不详)
+        shiroRealm.setAuthenticationCachingEnabled(false);
         //设置身份验证缓存名称
         shiroRealm.setAuthenticationCacheName(ShiroConstant.AUTHENTICATION_CACHE_NAME);
         //启用授权信息缓存，默认不缓存
@@ -182,12 +184,20 @@ public class ShiroConfig {
         redisManager.setPassword(redisConfig().getPassword());
         redisManager.setDatabase(redisConfig().getDatabase());
         redisManager.setTimeout(redisConfig().getTimeout());
+        JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+        jedisPoolConfig.setMaxIdle(redisConfig().getMaxIdle());
+        jedisPoolConfig.setMaxWaitMillis(redisConfig().getMaxWaitMillis());
+        jedisPoolConfig.setMaxTotal(redisConfig().getMaxActive());
+        jedisPoolConfig.setMinIdle(redisConfig().getMinIdle());
+        JedisPool jedisPool = new JedisPool(jedisPoolConfig, redisConfig().getHost(), redisConfig().getPort(), redisConfig().getTimeout(), redisConfig().getPassword());
+        redisManager.setJedisPool(jedisPool);
+        redisManager.setJedisPoolConfig(jedisPoolConfig);
         return redisManager;
     }
 
     @Bean
-    public RedisInfo redisConfig() {
-        return new RedisInfo();
+    public JedisConfig redisConfig() {
+        return new JedisConfig();
     }
 
     /**

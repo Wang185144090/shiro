@@ -4,14 +4,12 @@ import com.example.shiro.common.ShiroConstant;
 import com.example.shiro.model.po.User;
 import com.example.shiro.shiro.ShiroConfig;
 import org.apache.shiro.cache.Cache;
-import org.apache.shiro.cache.CacheManager;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.session.mgt.DefaultSessionKey;
 import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.subject.Subject;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.io.Serializable;
 import java.util.Deque;
 import java.util.LinkedList;
@@ -24,24 +22,8 @@ import java.util.LinkedList;
  */
 @Service
 public class ShiroSessionFilter {
-    /**
-     * session管理中心
-     */
-    @Resource
-    private SessionManager sessionManager;
-    /**
-     * 用户session缓存队列
-     */
-    @Resource
-    private CacheManager cacheManager;
 
-    private Cache<String, Deque<Serializable>> cache;
-
-
-    public Boolean check(Subject subject) {
-        if (cache == null) {
-            cache = cacheManager.getCache(ShiroConstant.CACHE_PREFIX);
-        }
+    public Boolean check(Subject subject, SessionManager sessionManager, Cache<String, Deque<Serializable>> cache) {
         //获取当前用户的session信息
         Session session = subject.getSession();
         //获取当前登录用户信息
@@ -58,7 +40,11 @@ public class ShiroSessionFilter {
             deque = new LinkedList<>();
         }
         //当前用户是否限制登录
-        Boolean userKickoutFlag = (Boolean) session.getAttribute(ShiroConstant.KICKOUT_FLAG);
+        boolean userKickoutFlag = false;
+        Object o = session.getAttribute(ShiroConstant.KICKOUT_FLAG);
+        if (o != null) {
+            userKickoutFlag = (Boolean) o;
+        }
         //如果队列里没有此sessionId，且用户没有被踢出；放入队列
         if (!deque.contains(sessionId) && !userKickoutFlag) {
             //将sessionId存入队列
@@ -84,6 +70,7 @@ public class ShiroSessionFilter {
             if (kickoutSession != null) {
                 //设置用户session为限制登录
                 kickoutSession.setAttribute(ShiroConstant.KICKOUT_FLAG, true);
+                return true;
             }
         }
         return userKickoutFlag;

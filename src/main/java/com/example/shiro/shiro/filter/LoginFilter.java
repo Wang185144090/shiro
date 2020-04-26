@@ -3,8 +3,15 @@ package com.example.shiro.shiro.filter;
 import com.alibaba.fastjson.JSONObject;
 import com.example.base.ResultEntity;
 import com.example.shiro.common.ShiroCodeMessage;
+import com.example.shiro.common.ShiroConstant;
+import org.apache.shiro.cache.Cache;
+import org.apache.shiro.cache.CacheManager;
+import org.apache.shiro.session.mgt.SessionManager;
 import org.apache.shiro.subject.Subject;
+import org.apache.shiro.util.CollectionUtils;
 import org.apache.shiro.web.filter.authc.AuthenticationFilter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -12,6 +19,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
+import java.util.Deque;
+import java.util.Set;
 
 /**
  * 登录拦截器
@@ -19,7 +29,22 @@ import java.io.PrintWriter;
  *
  * @author wangguoqiang
  */
+@AutoConfigureAfter
 public class LoginFilter extends AuthenticationFilter {
+    /**
+     * session管理中心
+     */
+    @Autowired
+    private SessionManager sessionManager;
+    /**
+     * 用户session缓存
+     */
+    @Autowired
+    private CacheManager cacheManager;
+    /**
+     * 用户session缓存队列
+     */
+    private Cache<String, Deque<Serializable>> cache;
 
     /**
      * 登录处理
@@ -29,8 +54,12 @@ public class LoginFilter extends AuthenticationFilter {
      */
     @Override
     protected boolean onAccessDenied(ServletRequest servletRequest, ServletResponse servletResponse) throws Exception {
+        String path = ((HttpServletRequest) servletRequest).getRequestURI();
+        System.out.println("当前请求地址为-->" + path);
+        if (cache == null) {
+            cache = cacheManager.getCache(ShiroConstant.CACHE_PREFIX);
+        }
         Subject subject = getSubject(servletRequest, servletResponse);
-        System.out.println("当前请求地址为-->" + ((HttpServletRequest) servletRequest).getRequestURI());
         HttpServletResponse response = (HttpServletResponse) servletResponse;
         if (!subject.isAuthenticated() && !subject.isRemembered()) {
             //登录失效返回
@@ -38,7 +67,7 @@ public class LoginFilter extends AuthenticationFilter {
             return false;
         }
         //此用户限制登录
-        if (new ShiroSessionFilter().check(subject)) {
+        if (new ShiroSessionFilter().check(subject, sessionManager, cache)) {
             //登出当前帐号
             subject.logout();
             //保存请求信息到shiro
@@ -46,15 +75,28 @@ public class LoginFilter extends AuthenticationFilter {
             returnMsg(response, ShiroCodeMessage.LOGIN_KICKOUT);
             return false;
         }
-
         return true;
     }
 
     /**
      * 不需要认证
+     * 以下注释代码为认证权限的配置，未测试
      */
     @Override
     protected boolean isAccessAllowed(ServletRequest servletRequest, ServletResponse servletResponse, Object o) {
+//        Subject subject = getSubject(servletRequest, servletResponse);
+//        String[] rolesArray = (String[]) o;
+//​
+//        if (rolesArray == null || rolesArray.length == 0) {
+//            return true;
+//        }
+//​
+//        Set<String> roles = CollectionUtils.asSet(rolesArray);
+//        for (String role : roles) {
+//            if (subject.hasRole(role)) {
+//                return true;
+//            }
+//        }
         return false;
     }
 
@@ -70,7 +112,7 @@ public class LoginFilter extends AuthenticationFilter {
     }
 
     /**
-     * 用户登录已失效请求返回数据
+     * 拼装拦截用户返回信息
      *
      * @param response http响应
      */

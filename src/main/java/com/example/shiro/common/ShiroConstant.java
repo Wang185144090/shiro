@@ -39,7 +39,7 @@ public class ShiroConstant {
     /**
      * shiro缓存前缀
      */
-    public static final String CACHE_PREFIX = "redis_shiro_cache";
+    public static final String CACHE_PREFIX = "shiro_cache";
 
     /**
      * 缓存有效时间，单位秒
@@ -89,7 +89,7 @@ public class ShiroConstant {
     /**
      * false:限制之前登录的用户，true:限制之后登录的用户
      */
-    public static final Boolean KICKOUT_AFTER = false;
+    public static final Boolean KICKOUT_AFTER = true;
 
     /**
      * 同一账号同时登录会话数

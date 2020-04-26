@@ -1,5 +1,7 @@
 package com.example.shiro.shiro.filter;
 
+import com.example.shiro.common.ShiroConstant;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,5 +53,7 @@ public class PathFilter {
     private static void addApi(List<String> list) {
         list.add("/v2/api-docs");
         list.add("/addUser");
+        list.add(ShiroConstant.LOGIN_INTERFACE_URL);
+        list.add("/logout");
     }
 }

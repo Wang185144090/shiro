@@ -3,7 +3,8 @@
 <generatorConfiguration>
 
     <classPathEntry
-            location="/Users/wangguoqiang/.m2/repository/mysql/mysql-connector-java/8.0.19/mysql-connector-java-8.0.19.jar"/>
+            location="E:\.m2\repository\mysql\mysql-connector-java\8.0.19\mysql-connector-java-8.0.19.jar"/>
+<!--            location="/Users/wangguoqiang/.m2/repository/mysql/mysql-connector-java/8.0.19/mysql-connector-java-8.0.19.jar"/>-->
 
     <context id="common-model" targetRuntime="MyBatis3">
         <!--实体实现序列化-->
@@ -16,7 +17,7 @@
             <property name="suppressAllComments" value="true"/>
         </commentGenerator>
 
-        <jdbcConnection connectionURL="jdbc:mysql://localhost:3306/shiro?characterEncoding=utf-8&amp;useSSL=false"
+        <jdbcConnection connectionURL="jdbc:mysql://localhost:3306/shiro?useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false&amp;serverTimezone=UTC"
                         driverClass="com.mysql.cj.jdbc.Driver" password="root" userId="root">
             <!--解决mysql驱动包升级到8.0以后出现的生成多个文件的问题-->
             <property name="nullCatalogMeansCurrent" value="true"/>
@@ -28,8 +29,8 @@
             <property name="trimStrings" value="true"/>
         </javaModelGenerator>
 
-        <sqlMapGenerator targetPackage="com.example.shiro.dao.mapper"
-                         targetProject="src/main/java">
+        <sqlMapGenerator targetPackage="mapper"
+                         targetProject="src/main/resources">
             <property name="enableSubPackages" value="true"/>
         </sqlMapGenerator>
 

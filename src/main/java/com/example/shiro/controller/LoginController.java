@@ -5,7 +5,6 @@ import com.example.base.ResultEntity;
 import com.example.shiro.common.ShiroCodeMessage;
 import com.example.shiro.model.po.User;
 import com.example.shiro.service.IUserService;
-import com.example.shiro.shiro.ShiroRealm;
 import com.example.shiro.shiro.ShiroSessionListener;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -43,7 +42,7 @@ public class LoginController {
         User user = new User();
         user.setUserName(userName);
         user.setSalt(salt);
-        user.setUserPassword(new SimpleHash(Sha256Hash.ALGORITHM_NAME, password, salt, 1).toHex());
+        user.setUserPassword(new SimpleHash(Sha256Hash.ALGORITHM_NAME, password, salt).toHex());
         return ResultEntity.success(userService.save(user));
     }
 
@@ -81,23 +80,6 @@ public class LoginController {
         if (subject != null) {
             //登出
             subject.logout();
-        }
-        return ResultEntity.success();
-    }
-
-    @ApiOperation(value = "清空缓存", notes = "JSON")
-    @GetMapping("clearCache")
-    public ResultEntity<?> clearCache(@ApiParam(value = "类型（0：所有缓存，1：认证缓存，2：授权缓存）", required = true) @RequestParam(name = "type") Integer type) {
-        //获取shiro认证信息
-        ShiroRealm shiroRealm = new ShiroRealm();
-        if (type == 0) {
-            shiroRealm.clearAllCache();
-        } else if (type == 1) {
-            shiroRealm.clearAllCachedAuthenticationInfo();
-        } else if (type == 2) {
-            shiroRealm.clearAllCachedAuthorizationInfo();
-        } else {
-            return ResultEntity.error(ShiroCodeMessage.PARAM_ERROR);
         }
         return ResultEntity.success();
     }

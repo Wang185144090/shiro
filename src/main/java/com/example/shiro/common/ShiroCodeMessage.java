@@ -11,7 +11,7 @@ public class ShiroCodeMessage extends CodeMessage {
 
     public static final ShiroCodeMessage LOGIN_EXPIRE = new ShiroCodeMessage("shiro_10001", "登录已失效");
 
-    public static final ShiroCodeMessage LOGIN_KICKOUT = new ShiroCodeMessage("shiro_10002", "登录已超过限制");
+    public static final ShiroCodeMessage LOGIN_KICKOUT = new ShiroCodeMessage("shiro_10002", "您的账号已在别处登录，请修改密码或重新登录");
 
     public static final ShiroCodeMessage UNKNOWN_ACCOUNT = new ShiroCodeMessage("shiro_10003", "用户不存在");
 

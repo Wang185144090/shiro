@@ -74,6 +74,12 @@
             <artifactId>shiro-redis</artifactId>
             <version>3.2.3</version>
         </dependency>
+        <!-- redis 客户端-->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>3.2.0</version>
+        </dependency>
         <!--支持aop-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -145,6 +151,15 @@
                 </dependencies>
             </plugin>
         </plugins>
+<!--        <resources>-->
+<!--            <resource>-->
+<!--                <directory>src/main/java</directory>-->
+<!--                <includes>-->
+<!--                    <include>**/*.xml</include>-->
+<!--                </includes>-->
+<!--                <filtering>true</filtering>-->
+<!--            </resource>-->
+<!--        </resources>-->
     </build>
 
 </project>

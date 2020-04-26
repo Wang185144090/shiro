@@ -2,10 +2,13 @@ server:
   port: 80
 
 spring:
+  main:
+    #相同的bean进行覆盖,比如需要redis代替默认缓存，需要注册相同名字的bean，否则无法识别自定义的bean
+    allow-bean-definition-overriding: true
   #数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/shiro?characterEncoding=utf-8&amp;useSSL=false
+    url: jdbc:mysql://127.0.0.1:3306/shiro?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC
     username: root
     password: root
     type: com.alibaba.druid.pool.DruidDataSource
@@ -38,7 +41,7 @@ swagger:
 
 #mybatis配置
 mybatis:
-  mapperLocations: classpath:com/example/shiro/dao/mapper/*.xml
+  mapperLocations: classpath:mapper/*.xml
   typeAliasesPackage: com.example.shiro.model.po
 
 logging:
