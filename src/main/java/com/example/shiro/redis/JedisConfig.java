@@ -44,8 +44,8 @@ public class JedisConfig extends CachingConfigurerSupport {
             jedisPoolConfig.setMaxWaitMillis(maxWaitMillis);
             jedisPoolConfig.setMaxTotal(maxActive);
             jedisPoolConfig.setMinIdle(minIdle);
-            JedisPool jedisPool = new JedisPool(jedisPoolConfig, host, port, timeout, password);
-            System.out.println("初始化Redis连接池JedisPool成功!地址: " + host + ":" + port);
+            JedisPool jedisPool = new JedisPool(jedisPoolConfig, host, port, timeout, password, database);
+            System.out.println("初始化Redis连接池JedisPool成功!地址: " + host + ":" + port + ":" + database);
             return jedisPool;
         } catch (Exception e) {
             System.out.println("初始化Redis连接池JedisPool异常:" + e.getMessage());

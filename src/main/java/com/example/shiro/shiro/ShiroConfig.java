@@ -189,7 +189,7 @@ public class ShiroConfig {
         jedisPoolConfig.setMaxWaitMillis(redisConfig().getMaxWaitMillis());
         jedisPoolConfig.setMaxTotal(redisConfig().getMaxActive());
         jedisPoolConfig.setMinIdle(redisConfig().getMinIdle());
-        JedisPool jedisPool = new JedisPool(jedisPoolConfig, redisConfig().getHost(), redisConfig().getPort(), redisConfig().getTimeout(), redisConfig().getPassword());
+        JedisPool jedisPool = new JedisPool(jedisPoolConfig, redisConfig().getHost(), redisConfig().getPort(), redisConfig().getTimeout(), redisConfig().getPassword(), redisConfig().getDatabase());
         redisManager.setJedisPool(jedisPool);
         redisManager.setJedisPoolConfig(jedisPoolConfig);
         return redisManager;
